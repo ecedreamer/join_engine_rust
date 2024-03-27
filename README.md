@@ -5,3 +5,7 @@ Note: This is just for educational purpose.
 1. Nested Loop Join
 2. Merge Sort Join
 3. Hash Join
+
+
+
+Note: Join types (eg Inner, Left, Right and Full join etc.) are not considered here. 
