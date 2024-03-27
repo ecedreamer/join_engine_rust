@@ -1,12 +1,33 @@
-use csv::Reader;
-use serde::de::DeserializeOwned;
+use csv::ReaderBuilder;
+use serde_json::{json, Value};
+use std::error::Error;
+use std::fs::File;
+use std::io::BufReader;
 
-pub fn load_dataset<T: DeserializeOwned>(file_path: &str) -> Result<Vec<T>, String> {
-    let mut reader = Reader::from_path(file_path).unwrap();
-    let mut items: Vec<T> = Vec::new();
-    for result in reader.deserialize() {
-        let item: T = result.map_err(|e| format!("Error deserializing: {}", e))?;
-        items.push(item);
+pub fn load_dataset(path: &str) -> Result<Vec<Value>, Box<dyn Error>> {
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+
+    let mut csv_reader = ReaderBuilder::new().has_headers(true).from_reader(reader);
+
+    let headers = csv_reader
+        .headers()?
+        .iter()
+        .map(|h| h.to_string())
+        .collect::<Vec<_>>();
+
+    let mut dataset = Vec::new();
+
+    for result in csv_reader.records() {
+        let record = result?;
+
+        let mut json_obj = json!({});
+        for (i, field) in record.iter().enumerate() {
+            json_obj[&headers[i]] = Value::String(field.to_string());
+        }
+
+        dataset.push(json_obj);
     }
-    Ok(items)
+
+    Ok(dataset)
 }

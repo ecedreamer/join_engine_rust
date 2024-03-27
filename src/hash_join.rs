@@ -1,24 +1,29 @@
-use crate::data_models::DataModel;
-use std::collections::HashSet;
+use serde_json::Value;
 
-pub fn join<U, V>(dataset_1: &[U], dataset_2: &[V], join_conditions: &[&str])
-where
-    U: DataModel,
-    V: DataModel,
-{
-    let mut product_ids_set = HashSet::new();
-    let mut matched_count = 0;
+use std::collections::HashMap;
 
+
+pub fn join(dataset_1: &[Value], dataset_2: &[Value], join_conditions: &[&str]) {
+    // Put dataset_1 into a HashMap
+    let mut hash_map = HashMap::new();
     for data_1 in dataset_1 {
-        if let Some(value_1) = data_1.get_value_by_field_name(join_conditions[0]) {
-            product_ids_set.insert(format!("{}", value_1));
+        if let Some(val) = data_1.get(join_conditions[0]) {
+            if let Some(val_str) = val.as_str() {
+                // Store the value and its corresponding record index
+                hash_map.insert(val_str, true);
+            }
         }
     }
 
+    // Perform the hash join
+    let mut matched_count = 0;
     for data_2 in dataset_2 {
-        if let Some(value_2) = data_2.get_value_by_field_name(join_conditions[1]) {
-            if product_ids_set.contains(&format!("{}", value_2)) {
-                matched_count += 1;
+        if let Some(val) = data_2.get(join_conditions[1]) {
+            if let Some(val_str) = val.as_str() {
+                // Check if the value exists in the HashMap
+                if hash_map.contains_key(val_str) {
+                    matched_count += 1;
+                }
             }
         }
     }
